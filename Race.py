@@ -209,7 +209,7 @@ class Ballot:
 
 		position_ranking_vote_dict = {}
 		for asuc_position, ranking_list in votes.iteritems():
-			position_ranking_vote_dict[asuc_position] = PositionRanking(ranking_list)
+			position_ranking_vote_dict[asuc_position] = PositionRankings(ranking_list)
 
 		self.votes = position_ranking_vote_dict
 		self.value = 1

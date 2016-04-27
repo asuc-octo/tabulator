@@ -101,6 +101,7 @@ class Election:
                         else:
                             votes[position].append(number)
                         colnum += 1
+
                 # Create a new ballot with the votes and add it to overall ballots
                 ballot = Ballot(votes)
                 self.ballots.append(ballot)

@@ -15,6 +15,7 @@ from Race import *
 
 import time
 import thread, threading
+from resignation import PositionRankings
 
 class ElectionFrame(wx.Frame):
   
