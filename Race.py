@@ -11,9 +11,11 @@ import time
 import sys
 from resignation import PositionRankings
 
+RESIGNEE_CANDIDATE_NUM = 45     # Guillermo Perez's number if the 2016 Election
+
 class Race:
 # A race refers to an election for one particular position
-	def __init__(self, election, position, candidates, ballots):
+	def __init__(self, election, position, candidates, ballots, tabulator=None, num_sen=NUM_SENATORS):
 		self.election = election
 		self.position = position
 		self.candidates = candidates
@@ -22,15 +24,19 @@ class Race:
 		self.winners = 0
 		self.spentBallots = 0
 		self.iterationNumber = 0
+		self.the_tabulator = tabulator
 
 		self.finished = False
 		self.current_ballots = ballots
 		self.redistribute_ballots = []
 		self.numValidVotes = self.countValidVotes(ballots)
+
+		self.num_senators = num_sen
+
 		if position != SENATOR:
 			self.quota = round((self.numValidVotes + 1)/2.0)
 		else:
-			self.quota = round(float(self.numValidVotes)/(NUM_SENATORS+1) + 1)
+			self.quota = round(float(self.numValidVotes)/(self.num_senators+1) + 1)
 		self.winner = []
 
 		# For senators
@@ -51,13 +57,15 @@ class Race:
 			if not vote:
 				self.spentBallots += ballot.value
 				return False
-			candidate_num = int(vote.pop(0))
+			candidate_num = int(vote.popNew(0))
 			if candidate_num not in self.numToCandidate.keys():
-				raise ElectionError("Candidate " + str(candidate_num) + " not found!")
+				continue
+				# raise ElectionError("Candidate " + str(candidate_num) + " not found!")
 			if self.numToCandidate[candidate_num].state == RUNNING:
 				break
 
 		candidate = self.numToCandidate[candidate_num]
+
 		candidate.score += ballot.value
 		candidate.ballots.append(ballot)
 		ballot.candidate = candidate
@@ -119,12 +127,19 @@ class Race:
 		return STOP
 
 	def runStepSenator(self):
+
 		if self.finished:
+			if self.the_tabulator is not None:
+				self.execute_resignation_election()
+			else:
+				print "Resignation Winner: " + repr([winner.name for winner in self.winner][0])
+				print "Number of new senators: " + str(self.num_senators)
 			return FINISHED
 		if self.current_ballots:
 			self.applyCurrentBallot()
+
 			return CONTINUE
-		if (len(self.current_winners) + len(self.current_runners)) <= NUM_SENATORS:
+		if (len(self.current_winners) + len(self.current_runners)) <= self.num_senators:
 			self.current_runners.sort(key=lambda x: -1 * x.score)
 			if self.current_runners[0].score >= self.quota:
 				candidate = self.current_runners.pop(0)
@@ -132,10 +147,20 @@ class Race:
 				return CONTINUE
 			self.winner = self.current_winners + self.current_runners
 			self.finished = True
+			if self.the_tabulator is not None:
+				self.execute_resignation_election()
+			else:
+				print "Resignation Winner: " + repr([winner.name for winner in self.winner][0])
+				print "Number of new senators: " + str(self.num_senators)
 			return FINISHED
-		if len(self.current_winners) == NUM_SENATORS:
+		if len(self.current_winners) == self.num_senators:
 			self.winner = self.current_winners
 			self.finished = True
+			if self.the_tabulator is not None:
+				self.execute_resignation_election()
+			else:
+				print "Resignation Winner: " + repr([winner.name for winner in self.winner][0])
+				print "Number of new senators: " + str(self.num_senators)
 			return FINISHED
 
 		self.current_runners.sort(key=lambda x: x.score)
@@ -144,7 +169,7 @@ class Race:
 
 		if top_score >= self.quota:
 			self.current_runners.sort(key=lambda x: -1 * x.score)
-			while self.current_runners[0].score >= self.quota and len(self.current_winners) < NUM_SENATORS:
+			while self.current_runners[0].score >= self.quota and len(self.current_winners) < self.num_senators:
 				candidate = self.current_runners.pop(0)
 				self.makeCandidateWin(candidate)
 			return CONTINUE
@@ -170,13 +195,17 @@ class Race:
 			ballot.value = ballot.value * float(candidate.score - self.quota)/candidate.score
 			self.current_ballots.append(ballot)
 		candidate.score = self.quota
-		candidate.quotaPlace = NUM_SENATORS - len(self.current_winners) + 1
+		candidate.quotaPlace = self.num_senators - len(self.current_winners) + 1
 
 	def applyCurrentBallot(self):
 		ballot = self.current_ballots.pop(0)
 		if ballot.candidate and ballot.candidate.state == LOSE:
 			ballot.candidate.score -= ballot.value
 		self.applyBallot(ballot)
+
+	def execute_resignation_election(self):
+		resignee_ballots = self.numToCandidate[RESIGNEE_CANDIDATE_NUM].ballots
+		self.the_tabulator.startResignationRace(self, resignee_ballots)
 
 class ElectionError(Exception):
 
@@ -212,12 +241,12 @@ class Ballot:
 			position_ranking_vote_dict[asuc_position] = PositionRankings(ranking_list)
 
 		self.votes = position_ranking_vote_dict
-		self.value = 1
+		self.value = 1.0
 
 	def setValue(self, val):
 		self.value = val
 
-	def __str__(self):
-		return str(self.votes)
+	def __repr__(self):
+		return repr(self.votes) + " <" + repr(self.value) + ">"
 
 

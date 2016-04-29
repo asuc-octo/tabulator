@@ -226,9 +226,37 @@ class Election:
         candidates = self.candidates[position]
         if not self.ballots: raise ElectionError("No ballots have been entered.")
         ballot_copy = copy.deepcopy(self.ballots)
-        self.race = Race(self, position, candidates, ballot_copy)
+        self.race = Race(self, position, candidates, ballot_copy, tabulator=self, num_sen=NUM_SENATORS)
         if (position != SENATOR):
             self.stepFunction = self.race.runStepExecutives
         else:
             self.stepFunction = self.race.runStepSenator
+        return self.race.quota
+
+    def startResignationRace(self, originalRace, resignee_ballots):
+        print "Starting second race"
+        candidates = self.candidates[SENATOR]
+        original_winners = originalRace.winner
+
+        original_losers = []
+        for candidate in candidates:
+            if candidate not in original_winners:
+                original_losers.append(candidate)
+
+        print "ORIGINAL LOSERS: " + repr([loser.name for loser in original_losers])
+        print "ORIGINAL WINNERS: " + repr([winner.name for winner in original_winners])
+
+        self.resetRace()
+        if not self.ballots: raise ElectionError("No ballots have been entered.")
+        print "Copying ballot for the resignation election"
+        
+        ballot_copy = copy.deepcopy(resignee_ballots)
+        self.race = Race(self, SENATOR, original_losers, ballot_copy, num_sen=1)
+        self.stepFunction = self.race.runStepSenator
+        
+        value = -1
+        while value != FINISHED:
+            value = self.race.runStepSenator()
+        
+        print "Completed resignation election"
         return self.race.quota

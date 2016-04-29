@@ -7,12 +7,22 @@ class PositionRankings:
 		:rankings: a list of rankings for a particular ASUC position
 		"""
 
-		self.immutable_rankings = rankings
-		self.mutable_rankings = rankings
+		self.immutable_rankings = list(rankings)
+		self.mutable_rankings = list(rankings)
 
-	def pop(self, index=0):
+	def popNew(self, index=0):
 		return self.mutable_rankings.pop(index)
 
 	def __len__(self):
 		return len(self.mutable_rankings)
+
+	def __repr__(self):
+		return repr(self.immutable_rankings)
+
+	def __str__(self):
+		return str(self.immutable_rankings)
+
+	def get_immutable_rankings(self):
+		return self.immutable_rankings
+
 
