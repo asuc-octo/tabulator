@@ -246,6 +246,10 @@ class Ballot:
 	def setValue(self, val):
 		self.value = val
 
+	def reset_rankings(self):
+		for asuc_position, ranking_list in self.votes.iteritems():
+			ranking_list.reset_ranking()
+	
 	def __repr__(self):
 		return repr(self.votes) + " <" + repr(self.value) + ">"
 

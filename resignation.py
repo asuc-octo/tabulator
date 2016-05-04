@@ -25,4 +25,7 @@ class PositionRankings:
 	def get_immutable_rankings(self):
 		return self.immutable_rankings
 
+	def reset_ranking(self):
+		self.mutable_rankings = list(self.immutable_rankings)
+
 

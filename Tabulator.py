@@ -251,6 +251,10 @@ class Election:
         print "Copying ballot for the resignation election"
         
         ballot_copy = copy.deepcopy(resignee_ballots)
+
+        for ballot in ballot_copy:
+            ballot.reset_rankings()
+
         self.race = Race(self, SENATOR, original_losers, ballot_copy, num_sen=1)
         self.stepFunction = self.race.runStepSenator
         
