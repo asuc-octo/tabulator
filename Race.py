@@ -9,6 +9,7 @@ from random import shuffle
 import math
 import time
 import sys
+import csv
 from resignation import PositionRankings
 
 class Race:
@@ -22,6 +23,7 @@ class Race:
 		self.winners = 0
 		self.spentBallots = 0
 		self.iterationNumber = 0
+		self.positions = ['President', 'Executive VP', 'External Affairs VP', 'Academic Affairs VP', 'Student Advocate', 'Senator']
 
 		self.finished = False
 		self.current_ballots = ballots
@@ -101,6 +103,7 @@ class Race:
 					candidate.score = self.quota
 					self.finished = True
 					self.winner.append(candidate)
+					self.outputVotes()
 					return FINISHED
 		for candidate in self.candidates:
 			if candidate.score >= self.quota:
@@ -108,6 +111,7 @@ class Race:
 				candidate.score = self.quota
 				self.finished = True
 				self.winner.append(candidate)
+				self.outputVotes()
 				return FINISHED
 		self.candidates.sort(key=lambda x: -1 * x.score)
 		worst_score = sys.maxint
@@ -136,6 +140,7 @@ class Race:
 		if len(self.current_winners) == NUM_SENATORS:
 			self.winner = self.current_winners
 			self.finished = True
+			self.outputVotes()
 			return FINISHED
 
 		self.current_runners.sort(key=lambda x: x.score)
@@ -161,7 +166,55 @@ class Race:
 				else:
 					break
 			shuffle(self.current_ballots)
+			self.outputVotes()
 			return STOP
+
+	def outputVotes(self):
+		try:
+			in_file = open("vote_printouts.csv", 'rb')
+			reader = csv.reader(in_file)
+		except IOError:
+			reader = None
+		rows_to_write = []
+		
+		written = False
+		wroteMoreParts = False
+		i = 0
+		if reader:
+			for row in reader:
+				# if not row:
+				# 	rows_to_write.append([])
+				# 	continue
+				if row[0] == self.positions[self.position - 1]:
+					row += ["count " + str(len(row))]
+					written = True
+					rows_to_write.append(row)
+					wroteMoreParts = True
+					continue
+				if row[0] in self.positions and row[0] != self.positions[self.position - 1]:
+					written = False
+				if written:
+					# relying on the fact that they should be in the same order
+					row += [self.candidates[i].score]
+					i += 1
+					if (i == len(self.candidates)):
+						written = False
+				rows_to_write.append(row)
+			in_file.close()
+		if not written and not wroteMoreParts:
+			print(self.positions[self.position - 1])
+			rows_to_write.append([' '])
+			row_head = [self.positions[self.position - 1], "count 1"]
+			rows_to_write.append(row_head)
+			for cand in self.candidates:
+				row_temp = [cand.name, cand.score]
+				rows_to_write.append(row_temp)
+
+		out_file = open("vote_printouts.csv", "wb")
+		writer = csv.writer(out_file)
+		for row in rows_to_write:
+			writer.writerow(row)
+		out_file.close()
 
 	def makeCandidateWin(self, candidate):
 		candidate.state = WIN

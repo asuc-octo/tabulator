@@ -45,6 +45,9 @@ class Election:
         # self.candidates is a dictionary mapping positions to an array of Candidate objects
         self.candidates = {}
 
+        # self.remove is a list of Candidate names who have been disqualified or withdrawn
+        self.remove = []
+
         # self.frame is the GUI frame that's displaying the election
         self.frame = frame
 
