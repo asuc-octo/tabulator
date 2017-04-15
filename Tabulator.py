@@ -45,13 +45,14 @@ class Election:
         # self.candidates is a dictionary mapping positions to an array of Candidate objects
         self.candidates = {}
 
-        # self.remove is a list of Candidate names who have been disqualified or withdrawn
+        # self.remove is a list of Candidate names who have been disqualified or withdrawn before the election
         self.remove = []
 
         # self.frame is the GUI frame that's displaying the election
         self.frame = frame
 
         self.race = None
+        self.finished = False
 
     def loadBallotsFromJSONFile(self, filepath):
         self.ballots = []
@@ -171,11 +172,11 @@ class Election:
 
     # Returns position value or 0 if invalid position
     def findPositionValue(self, position):
-        if "Executive Vice President" in position:
+        if "Executive Vice President" in position or "EVP" in position:
             return EXECUTIVE_VP
-        elif "External Affairs Vice President" in position:
+        elif "External Affairs Vice President" in position or "EAVP" in position:
             return EXTERNAL_VP
-        elif "Academic Affairs Vice President" in position:
+        elif "Academic Affairs Vice President" in position or "AAVP" in position:
             return ACADEMIC_VP
         elif "President" in position:
             return PRESIDENT
@@ -229,9 +230,74 @@ class Election:
         candidates = self.candidates[position]
         if not self.ballots: raise ElectionError("No ballots have been entered.")
         ballot_copy = copy.deepcopy(self.ballots)
-        self.race = Race(self, position, candidates, ballot_copy)
+        print("start race", self.remove)
+        self.race = Race(self, position, candidates, ballot_copy, toRemove=self.remove, tabulator=self)
         if (position != SENATOR):
             self.stepFunction = self.race.runStepExecutives
         else:
             self.stepFunction = self.race.runStepSenator
+        return self.race.quota
+
+    def startResignationRace(self, originalRace, removeAfter, resignee_ballots, numToCand, nameToCand):
+        print "Starting second race"
+        candidates = self.candidates[SENATOR]
+        original_winners = originalRace.winner
+
+        original_losers = []
+        for candidate in candidates:
+            if candidate not in original_winners:
+                original_losers.append(candidate)
+
+        print "ORIGINAL LOSERS: " + repr([loser.name for loser in original_losers])
+        print "ORIGINAL WINNERS: " + repr([winner.name for winner in original_winners])
+
+        self.resetRace()
+        if not self.ballots: raise ElectionError("No ballots have been entered.")
+        print "Copying ballot for the resignation election"
+        
+        ballot_copy = copy.deepcopy(resignee_ballots)
+
+        for ballot in ballot_copy:
+            ballot.reset_rankings()
+
+        self.race = Race(self, SENATOR, original_losers, ballot_copy, pastWinners=original_winners, toRemove=removeAfter, tabulator=self, numToC=numToCand, nameToC=nameToCand)
+        self.stepFunction = self.race.runStepSenator
+        
+        value = -1
+        while value != FINISHED:
+            value = self.race.runStepSenator()
+        
+        print "Completed resignation election"
+        return self.race.quota
+
+    def startResignationRaceExec(self, originalRace, position, removeAfter, resignee_ballots, numToCand, nameToCand):
+        print "Starting second race"
+        candidates = self.candidates[position]
+        original_winners = originalRace.winner
+
+        original_losers = []
+        for candidate in candidates:
+            if candidate not in original_winners:
+                original_losers.append(candidate)
+
+        print "ORIGINAL LOSERS: " + repr([loser.name for loser in original_losers])
+        print "ORIGINAL WINNERS: " + repr([winner.name for winner in original_winners])
+
+        self.resetRace()
+        if not self.ballots: raise ElectionError("No ballots have been entered.")
+        print "Copying ballot for the resignation election"
+        
+        ballot_copy = copy.deepcopy(resignee_ballots)
+
+        for ballot in ballot_copy:
+            ballot.reset_rankings()
+
+        self.race = Race(self, position, original_losers, ballot_copy, tabulator=self, numToC=numToCand, nameToC=nameToCand)
+        self.stepFunction = self.race.runStepExecutives
+        
+        value = -1
+        while value != FINISHED:
+            value = self.race.runStepExecutives()
+        
+        print "Completed resignation election"
         return self.race.quota

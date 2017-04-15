@@ -40,8 +40,10 @@ class ElectionFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.LoadBallots, loadb)
         loadc = filemenu.Append(wx.ID_ANY, "Load &Candidates", "Load candidates file")
         self.Bind(wx.EVT_MENU, self.LoadCandidates, loadc)
-        removec = filemenu.Append(wx.ID_ANY, "Remove &Candidates", "Remove candidates from race")
-        self.Bind(wx.EVT_MENU, self.RemoveCandidates, removec)
+        removebc = filemenu.Append(wx.ID_ANY, "Remove Candidates &Before", "Remove candidates from race before tabulation")
+        self.Bind(wx.EVT_MENU, self.RemoveCandidatesBefore, removebc)
+        removeac = filemenu.Append(wx.ID_ANY, "Remove Candidates &After", "Remove candidates from race after tabulation")
+        self.Bind(wx.EVT_MENU, self.RemoveCandidatesAfter, removeac)
         quit = filemenu.Append(wx.ID_ANY, "E&xit", "Terminate the program")
         self.Bind(wx.EVT_MENU, self.OnQuit, quit)
         
@@ -104,17 +106,17 @@ class ElectionFrame(wx.Frame):
         self.infoPanel.resetQuotaLabel()
         self.infoPanel.Layout()
 
-    def RemoveCandidates(self, evt):
+    def RemoveCandidatesBefore(self, evt):
         # Make sure ballots are loaded before candidates
         if not self.candidatesLoaded:
             error = wx.MessageDialog(None, 'Please Load Candidates First!', '', wx.OK | wx.ICON_EXCLAMATION)
             error.ShowModal()
             return
-        candidates = self.election.candidates;
+        candidates = self.election.candidates
         allCand = []
         for posList in candidates.values():
             for cand in posList:
-                allCand.append(cand.name);
+                allCand.append(cand.name)
         candRemove = wx.MultiChoiceDialog(self, "Candidates", "Remove Candidates", allCand, wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.OK | wx.CANCEL | wx.CENTER)
 
         # If file was not selected
@@ -124,16 +126,65 @@ class ElectionFrame(wx.Frame):
             toRemove = []
             toRemoveNum = candRemove.GetSelections()
             for i in toRemoveNum:
-                toRemove.append(i + 1)
-            print(toRemove)
-            self.election.remove = toRemove
+                toRemove.append(allCand[i])
+            print("electionsWindow", toRemove)
+            self.election.remove += toRemove
         except:
             error = wx.MessageDialog(None, 'Something went wrong!', '', wx.OK | wx.ICON_EXCLAMATION)
             error.ShowModal()
             return
         loaded = wx.MessageDialog(None, 'Candidates Successfully Removed!', '', wx.OK | wx.ICON_EXCLAMATION)
         loaded.ShowModal()
-        self.candidatesLoaded = True
+
+    def RemoveCandidatesAfter(self, evt):
+        if not self.election.finished:
+            error = wx.MessageDialog(None, 'Please run the election first!', '', wx.OK | wx.ICON_EXCLAMATION)
+            error.ShowModal()
+            return
+
+        # Make sure ballots are loaded before candidates
+        if not self.candidatesLoaded:
+            error = wx.MessageDialog(None, 'Please Load Candidates First!', '', wx.OK | wx.ICON_EXCLAMATION)
+            error.ShowModal()
+            return
+        candidates = self.election.race.winner
+        allCand = []
+        for cand in candidates:
+            allCand.append(cand.name)
+        candRemove = wx.MultiChoiceDialog(self, "Candidates", "Remove Candidates", allCand, wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER | wx.OK | wx.CANCEL | wx.CENTER)
+
+        # If file was not selected
+        if candRemove.ShowModal() == wx.ID_CANCEL:
+            return
+        toRemove = []
+        toRemoveNum = candRemove.GetSelections()
+        for i in toRemoveNum:
+            toRemove.append(allCand[i])
+        print("before", self.election.remove)
+        self.election.remove += toRemove
+        print("after", self.election.remove)
+        if (self.election.race.position != SENATOR):
+            self.election.race.execute_resignation_election_exec(self.election.race.position)
+        else:
+            self.election.race.execute_resignation_election()
+        try: 
+            # toRemove = []
+            # toRemoveNum = candRemove.GetSelections()
+            # for i in toRemoveNum:
+            #     toRemove.append(allCand[i])
+            # print("before", self.election.remove)
+            # self.election.remove += toRemove
+            # print("after", self.election.remove)
+            # if (self.election.race.position != SENATOR):
+            #     self.election.race.execute_resignation_election_exec(self.election.race.position, toRemove)
+            # else:
+                self.election.race.execute_resignation_election(toRemove)
+        except:
+            error = wx.MessageDialog(None, 'Something went wrong!', '', wx.OK | wx.ICON_EXCLAMATION)
+            error.ShowModal()
+            return
+        loaded = wx.MessageDialog(None, 'Candidates Successfully Removed!', '', wx.OK | wx.ICON_EXCLAMATION)
+        loaded.ShowModal()
 
     def LoadCandidates(self, evt):
         # Make sure ballots are loaded before candidates
@@ -164,6 +215,7 @@ class ElectionFrame(wx.Frame):
         if ballotFile.ShowModal() == wx.ID_CANCEL:
             return
         ballotFilePath = ballotFile.GetPath()
+        self.election.loadBallotsFromCSVFile(ballotFilePath)
         try:
              self.election.loadBallotsFromCSVFile(ballotFilePath)
         except:
@@ -251,8 +303,10 @@ class CandidatesPanel(scrolled.ScrolledPanel):
         self.grid.SetTable(self.datasource)
         self.grid.AutoSize()
         self.grid.SetColSize(0, 35)
-        self.grid.SetColSize(3, 100)
-        self.grid.SetColSize(4, 250)
+        self.grid.SetColSize(1, 200)
+        self.grid.SetColSize(2, 100)
+        self.grid.SetColSize(3, 200)
+        self.grid.SetColSize(4, 500)
 
         sizeInfo = gridlib.GridSizesInfo(18, [])
         self.grid.SetRowSizes(sizeInfo)

@@ -14,7 +14,7 @@ from resignation import PositionRankings
 
 class Race:
 # A race refers to an election for one particular position
-	def __init__(self, election, position, candidates, ballots):
+	def __init__(self, election, position, candidates, ballots, pastWinners=[], toRemove=[], tabulator=None, numToC={}, nameToC={}):
 		self.election = election
 		self.position = position
 		self.candidates = candidates
@@ -23,25 +23,43 @@ class Race:
 		self.winners = 0
 		self.spentBallots = 0
 		self.iterationNumber = 0
+		self.the_tabulator = tabulator
 		self.positions = ['President', 'Executive VP', 'External Affairs VP', 'Academic Affairs VP', 'Student Advocate', 'Senator']
 
 		self.finished = False
 		self.current_ballots = ballots
 		self.redistribute_ballots = []
 		self.numValidVotes = self.countValidVotes(ballots)
+
+		self.num_senators = NUM_SENATORS
+
 		if position != SENATOR:
 			self.quota = round((self.numValidVotes + 1)/2.0)
 		else:
 			self.quota = round(float(self.numValidVotes)/(NUM_SENATORS+1) + 1)
+		self.remove = toRemove
 		self.winner = []
 
 		# For senators
-		self.current_winners = []
+		temp = []
+		print("remove", self.remove)
+		if self.remove:
+			for cand in pastWinners:
+				if cand.name not in self.remove:
+					temp.append(cand)
+					print(cand.name)
+		self.current_winners = temp
 		self.current_runners = candidates[:]
 
 		# (HACK) Can't hash candidates, so temporarily use their candidate number as a key
-		self.numToCandidate = {candidate.number: candidate for candidate in candidates}
-
+		if numToC == {}:
+			self.numToCandidate = {candidate.number: candidate for candidate in candidates}
+		else:
+			self.numToCandidate = numToC
+		if nameToC == {}:
+			self.nameToCandidate = {candidate.name: candidate for candidate in candidates}
+		else:
+			self.nameToCandidate = nameToC
 
 	def applyBallot(self, ballot):
 		"""Increment a candidates score, and pop his number off the vote"""
@@ -53,13 +71,16 @@ class Race:
 			if not vote:
 				self.spentBallots += ballot.value
 				return False
-			candidate_num = int(vote.pop(0))
+			candidate_num = int(vote.popNew(0))
 			if candidate_num not in self.numToCandidate.keys():
-				raise ElectionError("Candidate " + str(candidate_num) + " not found!")
+				continue
+			if self.numToCandidate[candidate_num].name in self.remove:
+				continue
+				# raise ElectionError("Candidate " + str(candidate_num) + " not found!")
 			if self.numToCandidate[candidate_num].state == RUNNING:
 				break
-
 		candidate = self.numToCandidate[candidate_num]
+
 		candidate.score += ballot.value
 		candidate.ballots.append(ballot)
 		ballot.candidate = candidate
@@ -89,6 +110,9 @@ class Race:
 
 	def runStepExecutives(self):
 		if self.finished:
+			# if self.the_tabulator is None:
+			print "Winner: " + repr([winner.name for winner in self.winner])
+			self.election.finished = True
 			return FINISHED
 		if self.current_ballots:
 			ballot = self.current_ballots.pop(0)
@@ -104,6 +128,9 @@ class Race:
 					self.finished = True
 					self.winner.append(candidate)
 					self.outputVotes()
+					# if self.the_tabulator is None:
+					print "Winner: " + repr([winner.name for winner in self.winner])
+					self.election.finished = True
 					return FINISHED
 		for candidate in self.candidates:
 			if candidate.score >= self.quota:
@@ -112,6 +139,9 @@ class Race:
 				self.finished = True
 				self.winner.append(candidate)
 				self.outputVotes()
+				# if self.the_tabulator is None:
+				print "Winner: " + repr([winner.name for winner in self.winner])
+				self.election.finished = True
 				return FINISHED
 		self.candidates.sort(key=lambda x: -1 * x.score)
 		worst_score = sys.maxint
@@ -124,11 +154,15 @@ class Race:
 
 	def runStepSenator(self):
 		if self.finished:
+			# if self.the_tabulator is None:
+			print "Winner: " + repr([winner.name for winner in self.winner])
+			self.election.finished = True
+			self.outputVotes()
 			return FINISHED
 		if self.current_ballots:
 			self.applyCurrentBallot()
 			return CONTINUE
-		if (len(self.current_winners) + len(self.current_runners)) <= NUM_SENATORS:
+		if (len(self.current_winners) + len(self.current_runners)) <= self.num_senators:
 			self.current_runners.sort(key=lambda x: -1 * x.score)
 			if self.current_runners[0].score >= self.quota:
 				candidate = self.current_runners.pop(0)
@@ -136,10 +170,17 @@ class Race:
 				return CONTINUE
 			self.winner = self.current_winners + self.current_runners
 			self.finished = True
+			# if self.the_tabulator is None:
+			print "Winner: " + repr([winner.name for winner in self.winner])
+			self.election.finished = True
+			self.outputVotes()
 			return FINISHED
-		if len(self.current_winners) == NUM_SENATORS:
+		if len(self.current_winners) == self.num_senators:
 			self.winner = self.current_winners
 			self.finished = True
+			# if self.the_tabulator is None:
+			print "Winner: " + repr([winner.name for winner in self.winner])
+			self.election.finished = True
 			self.outputVotes()
 			return FINISHED
 
@@ -149,7 +190,7 @@ class Race:
 
 		if top_score >= self.quota:
 			self.current_runners.sort(key=lambda x: -1 * x.score)
-			while self.current_runners[0].score >= self.quota and len(self.current_winners) < NUM_SENATORS:
+			while self.current_runners[0].score >= self.quota and len(self.current_winners) < self.num_senators:
 				candidate = self.current_runners.pop(0)
 				self.makeCandidateWin(candidate)
 			return CONTINUE
@@ -166,7 +207,6 @@ class Race:
 				else:
 					break
 			shuffle(self.current_ballots)
-			self.outputVotes()
 			return STOP
 
 	def outputVotes(self):
@@ -231,6 +271,20 @@ class Race:
 			ballot.candidate.score -= ballot.value
 		self.applyBallot(ballot)
 
+	def execute_resignation_election(self):
+		resignee_ballots = []
+		for cand in self.remove:
+			resignee_ballots += self.nameToCandidate[cand].ballots
+		# resignee_ballots = self.numToCandidate[45].ballots
+		self.the_tabulator.startResignationRace(self, self.remove, resignee_ballots, self.numToCandidate, self.nameToCandidate)
+
+	def execute_resignation_election_exec(self, position):
+		resignee_ballots = []
+		for cand in self.remove:
+			resignee_ballots += self.nameToCandidate[cand].ballots
+		# resignee_ballots = self.numToCandidate[45].ballots
+		self.the_tabulator.startResignationRaceExec(self, position, self.remove, resignee_ballots, self.numToCandidate, self.nameToCandidate)
+
 class ElectionError(Exception):
 
 	def __init__(self, message):
@@ -269,6 +323,10 @@ class Ballot:
 
 	def setValue(self, val):
 		self.value = val
+
+	def reset_rankings(self):
+		for asuc_position, ranking_list in self.votes.iteritems():
+			ranking_list.reset_ranking()
 
 	def __str__(self):
 		return str(self.votes)
