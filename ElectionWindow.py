@@ -156,28 +156,17 @@ class ElectionFrame(wx.Frame):
         # If file was not selected
         if candRemove.ShowModal() == wx.ID_CANCEL:
             return
-        toRemove = []
-        toRemoveNum = candRemove.GetSelections()
-        for i in toRemoveNum:
-            toRemove.append(allCand[i])
-        print("before", self.election.remove)
-        self.election.remove += toRemove
-        print("after", self.election.remove)
-        if (self.election.race.position != SENATOR):
-            self.election.race.execute_resignation_election_exec(self.election.race.position)
-        else:
-            self.election.race.execute_resignation_election()
         try: 
-            # toRemove = []
-            # toRemoveNum = candRemove.GetSelections()
-            # for i in toRemoveNum:
-            #     toRemove.append(allCand[i])
-            # print("before", self.election.remove)
-            # self.election.remove += toRemove
-            # print("after", self.election.remove)
-            # if (self.election.race.position != SENATOR):
-            #     self.election.race.execute_resignation_election_exec(self.election.race.position, toRemove)
-            # else:
+            toRemove = []
+            toRemoveNum = candRemove.GetSelections()
+            for i in toRemoveNum:
+                toRemove.append(allCand[i])
+            print("before", self.election.remove)
+            self.election.remove += toRemove
+            print("after", self.election.remove)
+            if (self.election.race.position != SENATOR):
+                self.election.race.execute_resignation_election_exec(self.election.race.position, toRemove)
+            else:
                 self.election.race.execute_resignation_election(toRemove)
         except:
             error = wx.MessageDialog(None, 'Something went wrong!', '', wx.OK | wx.ICON_EXCLAMATION)
@@ -215,7 +204,6 @@ class ElectionFrame(wx.Frame):
         if ballotFile.ShowModal() == wx.ID_CANCEL:
             return
         ballotFilePath = ballotFile.GetPath()
-        self.election.loadBallotsFromCSVFile(ballotFilePath)
         try:
              self.election.loadBallotsFromCSVFile(ballotFilePath)
         except:

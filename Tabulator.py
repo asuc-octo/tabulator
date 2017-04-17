@@ -79,7 +79,7 @@ class Election:
             for row in data:
                 votes = {}
                 # Skip through two empty rows on top and save header row.
-                if rownum <= 2:
+                if rownum == 0:
                     header = row
                     rownum += 1
                     continue
@@ -100,6 +100,7 @@ class Election:
                             colnum += 1
                             continue
                         # Include candidate in vote
+                        print(number)
                         if position not in votes.keys():
                             votes[position] = [number]
                         else:
