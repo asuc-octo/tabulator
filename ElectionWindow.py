@@ -127,7 +127,6 @@ class ElectionFrame(wx.Frame):
             toRemoveNum = candRemove.GetSelections()
             for i in toRemoveNum:
                 toRemove.append(allCand[i])
-            print("electionsWindow", toRemove)
             self.election.remove += toRemove
         except:
             error = wx.MessageDialog(None, 'Something went wrong!', '', wx.OK | wx.ICON_EXCLAMATION)
@@ -161,9 +160,7 @@ class ElectionFrame(wx.Frame):
             toRemoveNum = candRemove.GetSelections()
             for i in toRemoveNum:
                 toRemove.append(allCand[i])
-            print("before", self.election.remove)
             self.election.remove += toRemove
-            print("after", self.election.remove)
             if (self.election.race.position != SENATOR):
                 self.election.race.execute_resignation_election_exec(self.election.race.position, toRemove)
             else:

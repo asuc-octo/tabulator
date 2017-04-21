@@ -80,6 +80,7 @@ class Election:
                 votes = {}
                 # Skip through two empty rows on top and save header row.
                 if rownum == 0:
+                    # if rownum <= 2:
                     header = row
                     rownum += 1
                     continue
@@ -100,7 +101,6 @@ class Election:
                             colnum += 1
                             continue
                         # Include candidate in vote
-                        print(number)
                         if position not in votes.keys():
                             votes[position] = [number]
                         else:
@@ -239,7 +239,7 @@ class Election:
             self.stepFunction = self.race.runStepSenator
         return self.race.quota
 
-    def startResignationRace(self, originalRace, removeAfter, resignee_ballots, numToCand, nameToCand):
+    def startResignationRace(self, originalRace, resignee_ballots, numToCand, nameToCand):
         print "Starting second race"
         candidates = self.candidates[SENATOR]
         original_winners = originalRace.winner
@@ -261,7 +261,7 @@ class Election:
         for ballot in ballot_copy:
             ballot.reset_rankings()
 
-        self.race = Race(self, SENATOR, original_losers, ballot_copy, pastWinners=original_winners, toRemove=removeAfter, tabulator=self, numToC=numToCand, nameToC=nameToCand)
+        self.race = Race(self, SENATOR, original_losers, ballot_copy, pastWinners=original_winners, toRemove=self.remove, tabulator=self, numToC=numToCand, nameToC=nameToCand)
         self.stepFunction = self.race.runStepSenator
         
         value = -1
@@ -271,7 +271,7 @@ class Election:
         print "Completed resignation election"
         return self.race.quota
 
-    def startResignationRaceExec(self, originalRace, position, removeAfter, resignee_ballots, numToCand, nameToCand):
+    def startResignationRaceExec(self, originalRace, position, resignee_ballots, numToCand, nameToCand):
         print "Starting second race"
         candidates = self.candidates[position]
         original_winners = originalRace.winner
@@ -293,7 +293,7 @@ class Election:
         for ballot in ballot_copy:
             ballot.reset_rankings()
 
-        self.race = Race(self, position, original_losers, ballot_copy, tabulator=self, numToC=numToCand, nameToC=nameToCand)
+        self.race = Race(self, position, original_losers, ballot_copy, toRemove=self.remove, tabulator=self, numToC=numToCand, nameToC=nameToCand)
         self.stepFunction = self.race.runStepExecutives
         
         value = -1
