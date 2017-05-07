@@ -162,9 +162,9 @@ class ElectionFrame(wx.Frame):
                 toRemove.append(allCand[i])
             self.election.remove += toRemove
             if (self.election.race.position != SENATOR):
-                self.election.race.execute_resignation_election_exec(self.election.race.position, toRemove)
+                self.election.race.execute_resignation_election_exec(self.election.race.position)
             else:
-                self.election.race.execute_resignation_election(toRemove)
+                self.election.race.execute_resignation_election()
         except:
             error = wx.MessageDialog(None, 'Something went wrong!', '', wx.OK | wx.ICON_EXCLAMATION)
             error.ShowModal()
