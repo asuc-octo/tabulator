@@ -2,7 +2,7 @@
 The Elections Tabulator for ASUC Elections.
 
 ## Using the Tabulator
-A copy of ElectionsApp.app is included in this repo. Simply download it and double-click to open the program.
+A copy of ElectionsApp.app is included in this repo. Simply download it and double-click to open the program. As a demo, you can load candidates2020Test.txt and 2020ElectionResultsTest.csv.
 
 ## Developing
 This project currently utilizes PyInstaller to create a simple Mac app/bundle. Simply install PyInstaller by running `pip install pyinstaller` then create the bundle by running `pyinstaller ElectionApp.py --onefile --windowed`. The bundle can be found in the dist/ directory.
