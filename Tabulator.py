@@ -96,12 +96,12 @@ class Election:
                         # print '%-8s: %s' % (header[colnum], col)
                         # Look for the position asked in the question
                         position = self.findPositionValue(header[colnum])
-                        if position not in range(1, 7):
+                        if position not in range(1, 8):
                             colnum += 1
                             continue
                         # Find the candidates number based on the answer
                         # Returns None if candidate not found
-                        number = self.findCandidateNumber(position, col.split('|', 1)[0][:-1])
+                        number = self.findCandidateNumber(position, col.split('|', 1)[0].strip())
                         # print number
                         if number == None:
                             colnum += 1
@@ -136,6 +136,9 @@ class Election:
         self.candidates[SENATOR] = []
         for candidate in data["senator"]:
             self.__addJSONCandidate__(candidate, SENATOR)
+        self.candidates[TRANSFER_REP] = []
+        for candidate in data["transfer_rep"]:
+            self.__addJSONCandidate__(candidate, TRANSFER_REP)
         self.candidates[PRESIDENT] = []
         for candidate in data["president"]:
             self.__addJSONCandidate__(candidate, PRESIDENT)
@@ -159,22 +162,20 @@ class Election:
         data = open(filepath)
         line = data.readline()
         number = 1
-        oldPosition = 0
+        currPosition = 0
         while not line == '':
             position = self.findPositionValue(line.split(':')[0])
             # If position is invalid, it means it read in a name
             # print position
             if position == 0:
-                name = line.split('|', 1)[0][:-1]
-                party = line.split('|', 2)[1][1:-1]
-                c = Candidate(number, name, oldPosition, party)
-                if oldPosition not in self.candidates.keys():
-                    self.candidates[oldPosition] = [c]
-                else:
-                    self.candidates[oldPosition].append(c)
+                name = line.split('|', 1)[0].strip()
+                party = line.split('|', 2)[1].strip()
+                c = Candidate(number, name, currPosition, party)
+                self.candidates[currPosition].append(c)
                 number += 1
             else:
-                oldPosition = position
+                currPosition = position
+                self.candidates[currPosition] = []
             line = data.readline()
         print(self.candidates)
 
@@ -192,6 +193,8 @@ class Election:
             return STUDENT_ADVOCATE
         elif "Senate" in position:
             return SENATOR
+        elif "Transfer" in position:
+            return TRANSFER_REP
         else:
             return 0
 

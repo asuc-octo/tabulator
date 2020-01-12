@@ -24,7 +24,7 @@ class Race:
 		self.spentBallots = 0
 		self.iterationNumber = 0
 		self.the_tabulator = tabulator
-		self.positions = ['President', 'Executive VP', 'External Affairs VP', 'Academic Affairs VP', 'Student Advocate', 'Senator']
+		self.positions = ['President', 'Executive VP', 'External Affairs VP', 'Academic Affairs VP', 'Student Advocate', 'Senator', 'Transfer Rep']
 
 		self.finished = False
 		self.current_ballots = ballots
@@ -34,9 +34,9 @@ class Race:
 		self.num_senators = NUM_SENATORS
 
 		if position != SENATOR:
-			self.quota = round((self.numValidVotes + 1)/2.0)
+			self.quota = math.ceil((self.numValidVotes + 1)/2.0)
 		else:
-			self.quota = round(float(self.numValidVotes)/(NUM_SENATORS+1) + 1)
+			self.quota = math.ceil((self.numValidVotes + 1)/(NUM_SENATORS+1))
 		self.remove = toRemove
 		self.winner = []
 

@@ -205,6 +205,7 @@ class ElectionFrame(wx.Frame):
              self.election.loadBallotsFromCSVFile(ballotFilePath)
         except Exception as inst:
             print(inst)
+            print(type(inst))
             error = wx.MessageDialog(None, 'Incorrectly Formatted Ballots File!', '', wx.OK | wx.ICON_EXCLAMATION)
             error.ShowModal()
             return
@@ -431,7 +432,7 @@ class InfoPanel(wx.Panel):
         self.GetSizer().Add(self.speedSlider, 0, wx.BOTTOM, 5)
         self.Bind(wx.EVT_SCROLL, self.changeSpeed, self.speedSlider)
 
-        positions = ['President', 'Executive VP', 'External Affairs VP', 'Academic Affairs VP', 'Student Advocate', 'Senator']
+        positions = ['President', 'Executive VP', 'External Affairs VP', 'Academic Affairs VP', 'Student Advocate', 'Senator', 'Transfer Rep']
         self.positionComboBox = wx.ComboBox(self, choices=positions, style=wx.CB_READONLY, size=(150,25))
         self.GetSizer().Add(self.positionComboBox, 0, wx.TOP | wx.LEFT, 15)
         self.Bind(wx.EVT_COMBOBOX, self.changeRace)
@@ -461,6 +462,8 @@ class InfoPanel(wx.Panel):
             self.frame.position = STUDENT_ADVOCATE
         elif position == 'Senator':
             self.frame.position = SENATOR
+        elif position == 'Transfer Rep':
+            self.frame.position = TRANSFER_REP
         if self.frame.candidatesLoaded:
             self.frame.replaceRace()
 
