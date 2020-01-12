@@ -14,18 +14,18 @@ from constants import *
 from Race import *
 
 import time
-import thread, threading
+import threading
 from resignation import PositionRankings
 
 class ElectionFrame(wx.Frame):
-  
+
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, title=title, size=(900, 680))
-        
+
         self.InitUI()
         self.Centre()
         self.Show()
-        
+
     def InitUI(self):
         # Create Status Bar
         self.CreateStatusBar()
@@ -46,7 +46,7 @@ class ElectionFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.RemoveCandidatesAfter, removeac)
         quit = filemenu.Append(wx.ID_ANY, "E&xit", "Terminate the program")
         self.Bind(wx.EVT_MENU, self.OnQuit, quit)
-        
+
         menubar.Append(filemenu, '&File')
 
         # Help Menu
@@ -122,7 +122,7 @@ class ElectionFrame(wx.Frame):
         # If file was not selected
         if candRemove.ShowModal() == wx.ID_CANCEL:
             return
-        try: 
+        try:
             toRemove = []
             toRemoveNum = candRemove.GetSelections()
             for i in toRemoveNum:
@@ -155,7 +155,7 @@ class ElectionFrame(wx.Frame):
         # If file was not selected
         if candRemove.ShowModal() == wx.ID_CANCEL:
             return
-        try: 
+        try:
             toRemove = []
             toRemoveNum = candRemove.GetSelections()
             for i in toRemoveNum:
@@ -180,7 +180,7 @@ class ElectionFrame(wx.Frame):
         if candFile.ShowModal() == wx.ID_CANCEL:
             return
         candFilePath = candFile.GetPath()
-        try: 
+        try:
             self.election.loadCandidatesFromTextFile(candFilePath)
         except:
             error = wx.MessageDialog(None, 'Incorrectly Formatted Candidates File!', '', wx.OK | wx.ICON_EXCLAMATION)
@@ -189,7 +189,7 @@ class ElectionFrame(wx.Frame):
         loaded = wx.MessageDialog(None, 'Candidates Successfully Loaded!', '', wx.OK | wx.ICON_EXCLAMATION)
         loaded.ShowModal()
         self.candidatesLoaded = True
-            
+
     def LoadBallots(self, evt):
         if not self.candidatesLoaded:
             error = wx.MessageDialog(None, 'Please Load Candidates First!', '', wx.OK | wx.ICON_EXCLAMATION)
@@ -203,7 +203,8 @@ class ElectionFrame(wx.Frame):
         ballotFilePath = ballotFile.GetPath()
         try:
              self.election.loadBallotsFromCSVFile(ballotFilePath)
-        except:
+        except Exception as inst:
+            print(inst)
             error = wx.MessageDialog(None, 'Incorrectly Formatted Ballots File!', '', wx.OK | wx.ICON_EXCLAMATION)
             error.ShowModal()
             return
@@ -219,18 +220,18 @@ class ElectionFrame(wx.Frame):
     def About(self, evt):
         # About Dialog
         self.about = wx.MessageDialog(None,
-            'This was writting for exclusive use by the Associated Students of the University of California by \
-            Yun Park and Alton Zheng-Xie. (ASUC Technical Coordinators 2011-2014) This software is provided \
-            \'as is\', and users must recognize that they operate this software at their own risk. In no event \
+            'This application was written for exclusive use by the Associated Students of the University of California by \
+            Yun Park and Alton Zheng-Xie (ASUC Technical Coordinators 2011-2014). It was  updated in Spring 2020 by Leon Ming (ASUC CTO). \
+            This software is provided \'as is\', and users must recognize that they operate this software at their own risk. In no event \
             shall the producers of this software be liable for any consequential, incidental, or special damage \
             whatsoever arising out of the use of or inability to use this software. Although this program has been \
-            thoroughly tested, there is always the change of unresolved issues.',
+            thoroughly tested, there is always the chance of unresolved issues.',
             'ASUC Elections Tabulator v4.0',
             wx.OK)
         self.about.ShowModal()
 
     def redistribute(self):
-        thread.start_new_thread(self.next, ())
+        threading.Thread(group=None, target=self.next, name='next').start()
 
     def next(self):
         status = self.election.iterateRace()
@@ -244,7 +245,7 @@ class ElectionFrame(wx.Frame):
             self.candidatesPanel.refresh()
             status = self.election.iterateRace()
             wx.Yield()
-        
+
         self.status = status
 
         # Enable changing positions and redistributing again
@@ -274,7 +275,7 @@ class CandidatesPanel(scrolled.ScrolledPanel):
         self.candidates = candidates
         self.frame = frame
         self.quota = self.frame.quota
-        
+
         self.SetSizer(wx.BoxSizer(wx.VERTICAL))
         self.initializeGrid()
         self.GetSizer().Add(self.grid, 1, wx.EXPAND)
@@ -300,9 +301,9 @@ class CandidatesPanel(scrolled.ScrolledPanel):
         self.candidates.sort(key=lambda x: -1 * (x.score + x.quotaPlace * self.quota))
         self.grid.Refresh()
 
-class BarRenderer(wx.grid.PyGridCellRenderer):
+class BarRenderer(wx.grid.GridCellRenderer):
     def __init__(self, table, color):
-        wx.grid.PyGridCellRenderer.__init__(self)
+        wx.grid.GridCellRenderer.__init__(self)
         self.table = table
         self.color = color
         self.rowSize = 50
@@ -310,7 +311,7 @@ class BarRenderer(wx.grid.PyGridCellRenderer):
     def Draw(self, grid, attr, dc, rect, row, col, isSelected):
         self.percentage = self.table.getPercentage(row)
         self.dc = dc
-        self.dc.BeginDrawing()
+        # self.dc.BeginDrawing()
         self.dc.SetPen(wx.Pen("grey",style=wx.TRANSPARENT))
         if self.percentage >= 1:
             self.dc.SetBrush(wx.Brush("yellow", wx.SOLID))
@@ -319,16 +320,16 @@ class BarRenderer(wx.grid.PyGridCellRenderer):
         self.length = grid.GetColSize(col)
         self.height = grid.GetRowSize(row)
         self.dc.DrawRectangle(rect.x,rect.y,self.length*self.percentage,self.height)
-        self.dc.EndDrawing()
-        self.dc.BeginDrawing()
+        # self.dc.EndDrawing()
+        # self.dc.BeginDrawing()
         self.dc.SetPen(wx.Pen("grey",style=wx.TRANSPARENT))
         self.dc.SetBrush(wx.Brush("white", wx.SOLID))
         self.dc.DrawRectangle(rect.x+self.length*self.percentage,rect.y,self.length*(1-self.percentage),self.height)
-        self.dc.EndDrawing()
+        # self.dc.EndDrawing()
 
-class CandidatesTable(wx.grid.PyGridTableBase):
+class CandidatesTable(wx.grid.GridTableBase):
     def __init__(self, parent, candidates, grid, barRenderer):
-        wx.grid.PyGridTableBase.__init__(self)
+        wx.grid.GridTableBase.__init__(self)
         self.parent = parent
         self.candidates = candidates
         self.candidates.sort(key=lambda x: x.number)
@@ -365,22 +366,22 @@ class CandidatesTable(wx.grid.PyGridTableBase):
         elif col == 4:
             return "Percentage of Quota"
 
-    def GetTypeName(self, row, col):
-        """Return the name of the data type of the value in the cell"""
-        return None
+    # def GetTypeName(self, row, col):
+    #    """Return the name of the data type of the value in the cell"""
+    #    return ''
 
     def GetValue(self, row, col):
         """Return the value of a cell"""
         try:
             if col == 0:
-                return self.candidates[row].number
+                return str(self.candidates[row].number)
             elif col == 1:
                 return self.candidates[row].name
             elif col == 2:
                 return self.candidates[row].party
             elif col == 3:
                 # Display quota if candidate quota'd
-                return self.round(self.candidates[row].score,4)
+                return str(self.round(self.candidates[row].score,4))
             elif col == 4:
                 return ""
         except:

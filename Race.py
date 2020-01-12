@@ -109,7 +109,7 @@ class Race:
 	def runStepExecutives(self):
 		if self.finished:
 			# if self.the_tabulator is None:
-			print "Winner: " + repr([winner.name for winner in self.winner])
+			print("Winner: " + repr([winner.name for winner in self.winner]))
 			self.election.finished = True
 			return FINISHED
 		if self.current_ballots:
@@ -127,7 +127,7 @@ class Race:
 					self.winner.append(candidate)
 					self.outputVotes()
 					# if self.the_tabulator is None:
-					print "Winner: " + repr([winner.name for winner in self.winner])
+					print("Winner: " + repr([winner.name for winner in self.winner]))
 					self.election.finished = True
 					return FINISHED
 		for candidate in self.candidates:
@@ -138,11 +138,11 @@ class Race:
 				self.winner.append(candidate)
 				self.outputVotes()
 				# if self.the_tabulator is None:
-				print "Winner: " + repr([winner.name for winner in self.winner])
+				print("Winner: " + repr([winner.name for winner in self.winner]))
 				self.election.finished = True
 				return FINISHED
 		self.candidates.sort(key=lambda x: -1 * x.score)
-		worst_score = sys.maxint
+		worst_score = sys.maxsize
 		for candidate in reversed(self.candidates):
 			if candidate.state == RUNNING and candidate.score <= worst_score:
 				self.current_ballots += candidate.ballots
@@ -153,7 +153,7 @@ class Race:
 	def runStepSenator(self):
 		if self.finished:
 			# if self.the_tabulator is None:
-			print "Winner: " + repr([winner.name for winner in self.winner])
+			print("Winner: " + repr([winner.name for winner in self.winner]))
 			self.election.finished = True
 			self.outputVotes()
 			return FINISHED
@@ -169,7 +169,7 @@ class Race:
 			self.winner = self.current_winners + self.current_runners
 			self.finished = True
 			# if self.the_tabulator is None:
-			print "Winner: " + repr([winner.name for winner in self.winner])
+			print("Winner: " + repr([winner.name for winner in self.winner]))
 			self.election.finished = True
 			self.outputVotes()
 			return FINISHED
@@ -177,7 +177,7 @@ class Race:
 			self.winner = self.current_winners
 			self.finished = True
 			# if self.the_tabulator is None:
-			print "Winner: " + repr([winner.name for winner in self.winner])
+			print("Winner: " + repr([winner.name for winner in self.winner]))
 			self.election.finished = True
 			self.outputVotes()
 			return FINISHED
@@ -210,12 +210,12 @@ class Race:
 
 	def outputVotes(self):
 		try:
-			in_file = open("vote_printouts.csv", 'rb')
+			in_file = open("vote_printouts.csv", 'r')
 			reader = csv.reader(in_file)
 		except IOError:
 			reader = None
 		rows_to_write = []
-		
+
 		written = False
 		wroteMoreParts = False
 		i = 0
@@ -249,7 +249,7 @@ class Race:
 				row_temp = [cand.name, cand.score]
 				rows_to_write.append(row_temp)
 
-		out_file = open("vote_printouts.csv", "wb")
+		out_file = open("vote_printouts.csv", "w")
 		writer = csv.writer(out_file)
 		for row in rows_to_write:
 			writer.writerow(row)
@@ -314,7 +314,7 @@ class Ballot:
 		self.candidate = None
 
 		position_ranking_vote_dict = {}
-		for asuc_position, ranking_list in votes.iteritems():
+		for asuc_position, ranking_list in votes.items():
 			position_ranking_vote_dict[asuc_position] = PositionRankings(ranking_list)
 
 		self.votes = position_ranking_vote_dict
@@ -324,7 +324,7 @@ class Ballot:
 		self.value = val
 
 	def reset_rankings(self):
-		for asuc_position, ranking_list in self.votes.iteritems():
+		for asuc_position, ranking_list in self.votes.items():
 			ranking_list.reset_ranking()
 
 	def __str__(self):
