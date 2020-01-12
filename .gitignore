@@ -1,3 +1,6 @@
 .DS_Store
 vote_printouts.csv
 __pycache__/
+dist/
+build/
+*.spec
