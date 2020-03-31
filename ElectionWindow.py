@@ -437,6 +437,10 @@ class InfoPanel(wx.Panel):
         self.GetSizer().Add(self.positionComboBox, 0, wx.TOP | wx.LEFT, 15)
         self.Bind(wx.EVT_COMBOBOX, self.changeRace)
 
+        self.countButton = wx.Button(self, wx.ID_ANY, label='Count', size=(100,25))
+        self.GetSizer().Add(self.countButton, 0, wx.TOP | wx.LEFT, 15)
+        self.Bind(wx.EVT_BUTTON, self.redistribute, self.countButton)
+
         self.redistributeButton = wx.Button(self, wx.ID_ANY, label='Redistribute', size=(100,25))
         self.GetSizer().Add(self.redistributeButton, 0, wx.TOP | wx.LEFT, 15)
         self.Bind(wx.EVT_BUTTON, self.redistribute, self.redistributeButton)
