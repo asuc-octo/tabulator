@@ -30,6 +30,9 @@ class Candidate:
     def __str__(self):
         return str(self.number) + ". " + self.name + " " + str(self.position) + " " + self.party + " SCORE: " + str(self.score) + " STATE: " + STATES[self.state]
 
+    def __repr__(self):
+        return self.__str__()
+
     def __hash__(self):
         return self.number
 
@@ -57,7 +60,7 @@ class Election:
     def loadBallotsFromJSONFile(self, filepath):
         self.ballots = []
         with open(filepath) as data_file:
-            data = json.load(data_file) 
+            data = json.load(data_file)
         for json_ballot in data["ballots"]:
             # Create a new dictionary that has keys as integers instead of strings
             votes = {}
@@ -70,7 +73,7 @@ class Election:
             ballot = Ballot(votes)
             self.ballots.append(ballot)
 
-    # Same as loadBallotsFromJSONFile, except reading from CSV 
+    # Same as loadBallotsFromJSONFile, except reading from CSV
     def loadBallotsFromCSVFile(self, filepath):
         self.ballots = []
         with open(filepath) as csv_data:
@@ -80,7 +83,11 @@ class Election:
                 votes = {}
                 # Skip through two empty rows on top and save header row.
                 if rownum == 0:
+                    # if rownum <= 2:
                     header = row
+                    rownum += 1
+                    continue
+                elif row[0] == '':
                     rownum += 1
                     continue
                 else:
@@ -89,18 +96,17 @@ class Election:
                         # print '%-8s: %s' % (header[colnum], col)
                         # Look for the position asked in the question
                         position = self.findPositionValue(header[colnum])
-                        if position not in range(1, 7):
+                        if position not in range(1, 8):
                             colnum += 1
                             continue
                         # Find the candidates number based on the answer
                         # Returns None if candidate not found
-                        number = self.findCandidateNumber(position, col.split('|', 1)[0][:-1])
+                        number = self.findCandidateNumber(position, col.split('|', 1)[0].strip())
                         # print number
                         if number == None:
                             colnum += 1
                             continue
                         # Include candidate in vote
-                        print(number)
                         if position not in votes.keys():
                             votes[position] = [number]
                         else:
@@ -130,6 +136,9 @@ class Election:
         self.candidates[SENATOR] = []
         for candidate in data["senator"]:
             self.__addJSONCandidate__(candidate, SENATOR)
+        self.candidates[TRANSFER_REP] = []
+        for candidate in data["transfer_rep"]:
+            self.__addJSONCandidate__(candidate, TRANSFER_REP)
         self.candidates[PRESIDENT] = []
         for candidate in data["president"]:
             self.__addJSONCandidate__(candidate, PRESIDENT)
@@ -153,23 +162,22 @@ class Election:
         data = open(filepath)
         line = data.readline()
         number = 1
-        oldPosition = 0
+        currPosition = 0
         while not line == '':
             position = self.findPositionValue(line.split(':')[0])
             # If position is invalid, it means it read in a name
             # print position
             if position == 0:
-                name = line.split('|', 1)[0][:-1]
-                party = line.split('|', 2)[1][1:-1]
-                c = Candidate(number, name, oldPosition, party)
-                if oldPosition not in self.candidates.keys():
-                    self.candidates[oldPosition] = [c]
-                else:
-                    self.candidates[oldPosition].append(c)
+                name = line.split('|', 1)[0].strip()
+                party = line.split('|', 2)[1].strip()
+                c = Candidate(number, name, currPosition, party)
+                self.candidates[currPosition].append(c)
                 number += 1
             else:
-                oldPosition = position
+                currPosition = position
+                self.candidates[currPosition] = []
             line = data.readline()
+        print(self.candidates)
 
     # Returns position value or 0 if invalid position
     def findPositionValue(self, position):
@@ -185,6 +193,8 @@ class Election:
             return STUDENT_ADVOCATE
         elif "Senate" in position:
             return SENATOR
+        elif "Transfer" in position:
+            return TRANSFER_REP
         else:
             return 0
 
@@ -239,8 +249,8 @@ class Election:
             self.stepFunction = self.race.runStepSenator
         return self.race.quota
 
-    def startResignationRace(self, originalRace, removeAfter, resignee_ballots, numToCand, nameToCand):
-        print "Starting second race"
+    def startResignationRace(self, originalRace, resignee_ballots, numToCand, nameToCand):
+        print("Starting second race")
         candidates = self.candidates[SENATOR]
         original_winners = originalRace.winner
 
@@ -249,30 +259,30 @@ class Election:
             if candidate not in original_winners:
                 original_losers.append(candidate)
 
-        print "ORIGINAL LOSERS: " + repr([loser.name for loser in original_losers])
-        print "ORIGINAL WINNERS: " + repr([winner.name for winner in original_winners])
+        print("ORIGINAL LOSERS: " + repr([loser.name for loser in original_losers]))
+        print("ORIGINAL WINNERS: " + repr([winner.name for winner in original_winners]))
 
         self.resetRace()
         if not self.ballots: raise ElectionError("No ballots have been entered.")
-        print "Copying ballot for the resignation election"
-        
+        print("Copying ballot for the resignation election")
+
         ballot_copy = copy.deepcopy(resignee_ballots)
 
         for ballot in ballot_copy:
             ballot.reset_rankings()
 
-        self.race = Race(self, SENATOR, original_losers, ballot_copy, pastWinners=original_winners, toRemove=removeAfter, tabulator=self, numToC=numToCand, nameToC=nameToCand)
+        self.race = Race(self, SENATOR, original_losers, ballot_copy, pastWinners=original_winners, toRemove=self.remove, tabulator=self, numToC=numToCand, nameToC=nameToCand)
         self.stepFunction = self.race.runStepSenator
-        
+
         value = -1
         while value != FINISHED:
             value = self.race.runStepSenator()
-        
-        print "Completed resignation election"
+
+        print("Completed resignation election")
         return self.race.quota
 
-    def startResignationRaceExec(self, originalRace, position, removeAfter, resignee_ballots, numToCand, nameToCand):
-        print "Starting second race"
+    def startResignationRaceExec(self, originalRace, position, resignee_ballots, numToCand, nameToCand):
+        print("Starting second race")
         candidates = self.candidates[position]
         original_winners = originalRace.winner
 
@@ -281,24 +291,24 @@ class Election:
             if candidate not in original_winners:
                 original_losers.append(candidate)
 
-        print "ORIGINAL LOSERS: " + repr([loser.name for loser in original_losers])
-        print "ORIGINAL WINNERS: " + repr([winner.name for winner in original_winners])
+        print("ORIGINAL LOSERS: " + repr([loser.name for loser in original_losers]))
+        print("ORIGINAL WINNERS: " + repr([winner.name for winner in original_winners]))
 
         self.resetRace()
         if not self.ballots: raise ElectionError("No ballots have been entered.")
-        print "Copying ballot for the resignation election"
-        
+        print("Copying ballot for the resignation election")
+
         ballot_copy = copy.deepcopy(resignee_ballots)
 
         for ballot in ballot_copy:
             ballot.reset_rankings()
 
-        self.race = Race(self, position, original_losers, ballot_copy, tabulator=self, numToC=numToCand, nameToC=nameToCand)
+        self.race = Race(self, position, original_losers, ballot_copy, toRemove=self.remove, tabulator=self, numToC=numToCand, nameToC=nameToCand)
         self.stepFunction = self.race.runStepExecutives
-        
+
         value = -1
         while value != FINISHED:
             value = self.race.runStepExecutives()
-        
-        print "Completed resignation election"
+
+        print("Completed resignation election")
         return self.race.quota

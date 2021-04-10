@@ -1,8 +1,8 @@
-#############################################################
-#					    ElectionApp.py						#
-#			  Created by: Alton Zheng & Yun Park			#
-#			   Copyright Elections Council 2014				#
-#############################################################
+##############################################################
+#   ElectionApp.py                                           #
+#   Created by: Alton Zheng & Yun Park                       #
+#   Updated in Spring 2020 by Leon Ming, ASUC CTO            #
+##############################################################
 
 import wx
 from ElectionWindow import *
